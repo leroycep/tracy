@@ -2,7 +2,7 @@ const std = @import("std");
 
 pub const c = @cImport({
     @cDefine("TRACY_ENABLE", "");
-    @cInclude("TracyC.h");
+    @cInclude("tracy/TracyC.h");
 });
 
 pub const Frame = struct {
