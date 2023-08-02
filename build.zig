@@ -24,7 +24,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
     lib.installHeadersDirectory("public", "");
-    lib.addCSourceFile("public/TracyClient.cpp", &.{"-fno-sanitize=undefined"});
+    lib.addCSourceFiles(&.{"public/TracyClient.cpp"}, &.{"-fno-sanitize=undefined"});
     if (enable) lib.defineCMacro("TRACY_ENABLE", "ON");
     lib.linkLibCpp();
     lib.linkSystemLibrary("pthread");
