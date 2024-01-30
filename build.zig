@@ -9,14 +9,9 @@ pub fn build(b: *std.Build) void {
     build_options.addOption(bool, "enable", enable);
 
     const module = b.addModule("tracy", .{
-        .source_file = .{ .path = "public/tracy.zig" },
-        .dependencies = &.{
-            .{
-                .name = "build_options",
-                .module = build_options.createModule(),
-            },
-        },
+        .root_source_file = .{ .path = "public/tracy.zig" },
     });
+    module.addOptions("build_options", build_options);
 
     const lib = b.addStaticLibrary(.{
         .name = "tracy",
@@ -24,7 +19,10 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
     lib.installHeadersDirectory("public", "");
-    lib.addCSourceFiles(&.{"public/TracyClient.cpp"}, &.{"-fno-sanitize=undefined"});
+    lib.addCSourceFiles(.{
+        .files = &.{"public/TracyClient.cpp"},
+        .flags = &.{"-fno-sanitize=undefined"},
+    });
     if (enable) lib.defineCMacro("TRACY_ENABLE", "ON");
     lib.linkLibCpp();
     lib.linkSystemLibrary("pthread");
@@ -37,7 +35,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-    exe.addModule("tracy", module);
+    exe.root_module.addImport("tracy", module);
     exe.linkLibrary(lib);
     b.installArtifact(exe);
 }
