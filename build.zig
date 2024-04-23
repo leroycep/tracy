@@ -6,11 +6,11 @@ pub fn build(b: *std.Build) !void {
 
     const enable = b.option(bool, "enable", "enable performance profiling integration") orelse false;
     const python = b.option(bool, "python", "install Tracy python module (default: false)") orelse false;
-    const linkage = b.option(std.Build.Step.Compile.Linkage, "linkage", "whether to use static or dynamic linking for the TracyClient library (default: static)") orelse
+    const linkage = b.option(std.builtin.LinkMode, "linkage", "whether to use static or dynamic linking for the TracyClient library (default: static)") orelse
         if (python)
-        std.Build.Step.Compile.Linkage.dynamic
+        std.builtin.LinkMode.dynamic
     else
-        std.Build.Step.Compile.Linkage.static;
+        std.builtin.LinkMode.static;
 
     if (python and linkage == .static) {
         // We need dynamic linking because otherwise we run into issues
@@ -35,13 +35,6 @@ pub fn build(b: *std.Build) !void {
     });
     b.installArtifact(tracy_client);
 
-    // const tracy_client_dll_for_python_module = buildTracyClientLibrary(b, .{
-    //     .enable = true,
-    //     .target = target,
-    //     .optimize = optimize,
-    //     .linkage = .dynamic,
-    // });
-
     // Create the native part of the Python module
     const pytracy = b.addSharedLibrary(.{
         .name = "PyTracyClient",
@@ -56,10 +49,6 @@ pub fn build(b: *std.Build) !void {
     pytracy.linkSystemLibrary("python");
 
     if (python) {
-        // const pytracy_install_dll = b.addInstallArtifact(tracy_client, .{
-        //     .dest_dir = .{ .override = .{ .custom = "site-packages/" } },
-        // });
-
         const pytracy_install_module = b.addInstallArtifact(pytracy, .{
             .dest_dir = .{ .override = .{ .custom = "site-packages/" } },
             .dest_sub_path = if (target.result.os.tag == .windows) "PyTracyClient.pyd" else "PyTracyClient.so",
@@ -77,10 +66,6 @@ pub fn build(b: *std.Build) !void {
         b.getInstallStep().dependOn(&pytracy_install_module.step);
         b.getInstallStep().dependOn(&install_python_source_files.step);
     }
-    // install_python_source_files.step.dependOn(&pytracy_install_module.step);
-
-    // const tracy_py_step = b.step("tracy.py", "Install python module for Tracy");
-    // tracy_py_step.dependOn(&install_python_source_files.step);
 }
 
 pub fn buildTracyClientLibrary(b: *std.Build, options: struct {
@@ -88,7 +73,7 @@ pub fn buildTracyClientLibrary(b: *std.Build, options: struct {
     enable: bool,
     target: std.Build.ResolvedTarget,
     optimize: std.builtin.OptimizeMode,
-    linkage: std.Build.Step.Compile.Linkage,
+    linkage: std.builtin.LinkMode,
 }) *std.Build.Step.Compile {
     const tracy_client = std.Build.Step.Compile.create(b, .{
         .name = "TracyClient",
@@ -106,26 +91,10 @@ pub fn buildTracyClientLibrary(b: *std.Build, options: struct {
     });
     tracy_client.addCSourceFile(.{ .file = .{ .path = "public/TracyClient.cpp" } });
     tracy_client.addIncludePath(.{ .path = "public" });
-    tracy_client.installHeadersDirectoryOptions(.{
-        .source_dir = .{ .path = "public/tracy" },
-        .install_dir = .header,
-        .install_subdir = "tracy",
-    });
-    tracy_client.installHeadersDirectoryOptions(.{
-        .source_dir = .{ .path = "public/common" },
-        .install_dir = .header,
-        .install_subdir = "common",
-    });
-    tracy_client.installHeadersDirectoryOptions(.{
-        .source_dir = .{ .path = "public/client" },
-        .install_dir = .header,
-        .install_subdir = "client",
-    });
-    tracy_client.installHeadersDirectoryOptions(.{
-        .source_dir = .{ .path = "public/libbacktrace" },
-        .install_dir = .header,
-        .install_subdir = "libbacktrace",
-    });
+    tracy_client.installHeadersDirectory(.{ .path = "public/tracy" }, "tracy", .{});
+    tracy_client.installHeadersDirectory(.{ .path = "public/common" }, "common", .{});
+    tracy_client.installHeadersDirectory(.{ .path = "public/client" }, "client", .{});
+    tracy_client.installHeadersDirectory(.{ .path = "public/libbacktrace" }, "libbacktrace", .{});
     tracy_client.linkLibCpp();
     if (options.enable) {
         tracy_client.defineCMacro("TRACY_ENABLE", "1");
