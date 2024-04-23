@@ -91,10 +91,18 @@ pub fn buildTracyClientLibrary(b: *std.Build, options: struct {
     });
     tracy_client.addCSourceFile(.{ .file = .{ .path = "public/TracyClient.cpp" } });
     tracy_client.addIncludePath(.{ .path = "public" });
-    tracy_client.installHeadersDirectory(.{ .path = "public/tracy" }, "tracy", .{});
-    tracy_client.installHeadersDirectory(.{ .path = "public/common" }, "common", .{});
-    tracy_client.installHeadersDirectory(.{ .path = "public/client" }, "client", .{});
-    tracy_client.installHeadersDirectory(.{ .path = "public/libbacktrace" }, "libbacktrace", .{});
+    tracy_client.installHeadersDirectory(.{ .path = "public/tracy" }, "tracy", .{
+        .include_extensions = &.{ ".h", ".hpp" },
+    });
+    tracy_client.installHeadersDirectory(.{ .path = "public/common" }, "common", .{
+        .include_extensions = &.{ ".h", ".hpp" },
+    });
+    tracy_client.installHeadersDirectory(.{ .path = "public/client" }, "client", .{
+        .include_extensions = &.{ ".h", ".hpp" },
+    });
+    tracy_client.installHeadersDirectory(.{ .path = "public/libbacktrace" }, "libbacktrace", .{
+        .include_extensions = &.{ ".h", ".hpp" },
+    });
     tracy_client.linkLibCpp();
     if (options.enable) {
         tracy_client.defineCMacro("TRACY_ENABLE", "1");
