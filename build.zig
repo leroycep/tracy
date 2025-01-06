@@ -9,8 +9,8 @@ pub fn build(b: *std.Build) void {
     build_options.addOption(bool, "enable", enable);
 
     const module = b.addModule("tracy", .{
-        .source_file = .{ .path = "public/tracy.zig" },
-        .dependencies = &.{
+        .root_source_file = b.path("public/tracy.zig"),
+        .imports = &.{
             .{
                 .name = "build_options",
                 .module = build_options.createModule(),
@@ -23,8 +23,8 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-    lib.installHeadersDirectory("public", "");
-    lib.addCSourceFile("public/TracyClient.cpp", &.{ "-DTRACY_ENABLE", "-fno-sanitize=undefined" });
+    lib.installHeadersDirectory(b.path("public"), "", .{});
+    lib.addCSourceFile(.{ .file = b.path("public/TracyClient.cpp"), .flags = &.{ "-DTRACY_ENABLE", "-fno-sanitize=undefined" } });
     lib.linkLibCpp();
     lib.linkSystemLibrary("pthread");
 
@@ -32,11 +32,11 @@ pub fn build(b: *std.Build) void {
 
     const exe = b.addExecutable(.{
         .name = "example-tracy-profiling",
-        .root_source_file = .{ .path = "main.zig" },
+        .root_source_file = b.path("main.zig"),
         .target = target,
         .optimize = optimize,
     });
-    exe.addModule("tracy", module);
+    exe.root_module.addImport("tracy", module);
     exe.linkLibrary(lib);
     b.installArtifact(exe);
 }
