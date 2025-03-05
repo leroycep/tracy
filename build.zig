@@ -32,7 +32,16 @@ pub fn build(b: *std.Build) void {
         lib.defineCMacro("TRACY_ENABLE", "ON");
     }
     lib.linkLibCpp();
-    lib.linkSystemLibrary("pthread");
+
+    switch (target.result.os.tag) {
+        .windows => {
+            lib.linkSystemLibrary("ws2_32");
+            lib.linkSystemLibrary("dbghelp");
+        },
+        else => {
+            lib.linkSystemLibrary("pthread");
+        },
+    }
 
     b.installArtifact(lib);
 
