@@ -10,38 +10,39 @@ pub fn build(b: *std.Build) void {
 
     const module = b.addModule("tracy", .{
         .root_source_file = b.path("public/tracy.zig"),
+        .target = target,
+        .optimize = optimize,
         .imports = &.{
             .{
                 .name = "build_options",
                 .module = build_options.createModule(),
             },
         },
+        .link_libcpp = true,
     });
-
-    const lib = b.addStaticLibrary(.{
-        .name = "tracy",
-        .target = target,
-        .optimize = optimize,
-    });
-    lib.installHeadersDirectory(b.path("public"), "", .{});
-    lib.addCSourceFile(.{
+    module.addCSourceFile(.{
         .file = b.path("public/TracyClient.cpp"),
         .flags = &.{"-fno-sanitize=undefined"},
     });
     if (enable) {
-        lib.defineCMacro("TRACY_ENABLE", "ON");
+        module.addCMacro("TRACY_ENABLE", "ON");
     }
-    lib.linkLibCpp();
-
     switch (target.result.os.tag) {
         .windows => {
-            lib.linkSystemLibrary("ws2_32");
-            lib.linkSystemLibrary("dbghelp");
+            module.linkSystemLibrary("ws2_32", .{});
+            module.linkSystemLibrary("dbghelp", .{});
         },
         else => {
-            lib.linkSystemLibrary("pthread");
+            module.linkSystemLibrary("pthread", .{});
         },
     }
+    module.addIncludePath(b.path("public"));
+
+    const lib = b.addLibrary(.{
+        .name = "TracyClient",
+        .linkage = .static,
+        .root_module = module,
+    });
 
     b.installArtifact(lib);
 
