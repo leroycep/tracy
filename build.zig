@@ -4,11 +4,13 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
     const enable = b.option(bool, "enable", "enable tracy profiling") orelse false;
+    const no_callstack = b.option(bool, "no_callstack", "Disable all callstack related functionality") orelse false;
     const delayed_init = b.option(bool, "delayed_init", "Enable delayed initialization of the library (init on first call)") orelse false;
     const manual_lifetime = b.option(bool, "manual_lifetime", "Enable the manual lifetime management of the profile (requires delayed_init)") orelse false;
 
     const build_options = b.addOptions();
     build_options.addOption(bool, "enable", enable);
+    build_options.addOption(bool, "no_callstack", no_callstack);
     build_options.addOption(bool, "delayed_init", delayed_init);
     build_options.addOption(bool, "manual_lifetime", manual_lifetime);
 
@@ -23,6 +25,7 @@ pub fn build(b: *std.Build) void {
         .flags = &.{"-fno-sanitize=undefined"},
     });
     if (enable) tracy_client_cpp_module.addCMacro("TRACY_ENABLE", "ON");
+    if (no_callstack) tracy_client_cpp_module.addCMacro("TRACY_NO_CALLSTACK", "1");
     if (delayed_init) tracy_client_cpp_module.addCMacro("TRACY_DELAYED_INIT", "1");
     if (manual_lifetime) tracy_client_cpp_module.addCMacro("TRACY_MANUAL_LIFETIME", "1");
 
