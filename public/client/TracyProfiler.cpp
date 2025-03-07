@@ -3960,7 +3960,7 @@ void Profiler::HandleSourceCodeQuery( char* data, char* image, uint32_t id )
     if( f )
     {
         struct stat st;
-        if( fstat( fileno( f ), &st ) == 0 && (uint64_t)st.st_mtime < m_exectime && st.st_size < ( TargetFrameSize - 16 ) )
+        if( fstat( _fileno( f ), &st ) == 0 && (uint64_t)st.st_mtime < m_exectime && st.st_size < ( TargetFrameSize - 16 ) )
         {
             auto ptr = (char*)tracy_malloc_fast( st.st_size );
             auto rd = fread( ptr, 1, st.st_size, f );

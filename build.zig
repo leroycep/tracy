@@ -13,19 +13,23 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
         .link_libc = true,
-        .link_libcpp = true,
     });
     tracy_client_cpp_module.addCSourceFile(.{
         .file = b.path("public/TracyClient.cpp"),
-        .flags = &.{ "-fno-sanitize=undefined", "-std=c++11" },
+        .flags = &.{"-fno-sanitize=undefined"},
     });
     if (enable) {
         tracy_client_cpp_module.addCMacro("TRACY_ENABLE", "ON");
     }
     switch (target.result.os.tag) {
-        .windows => if (target.result.abi.isGnu()) {
-            tracy_client_cpp_module.linkSystemLibrary("ws2_32", .{});
-            tracy_client_cpp_module.linkSystemLibrary("dbghelp", .{});
+        .windows => {
+            tracy_client_cpp_module.addCMacro("WINVER", "0x0601");
+            tracy_client_cpp_module.addCMacro("_WIN32_WINNT", "0x0601");
+            if (target.result.abi.isGnu()) {
+                tracy_client_cpp_module.link_libcpp = true;
+                tracy_client_cpp_module.linkSystemLibrary("ws2_32", .{});
+                tracy_client_cpp_module.linkSystemLibrary("dbghelp", .{});
+            }
         },
         else => {
             tracy_client_cpp_module.linkSystemLibrary("pthread", .{});
