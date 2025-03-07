@@ -4,9 +4,13 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
     const enable = b.option(bool, "enable", "enable tracy profiling") orelse false;
+    const delayed_init = b.option(bool, "delayed_init", "Enable delayed initialization of the library (init on first call)") orelse false;
+    const manual_lifetime = b.option(bool, "manual_lifetime", "Enable the manual lifetime management of the profile (requires delayed_init)") orelse false;
 
     const build_options = b.addOptions();
     build_options.addOption(bool, "enable", enable);
+    build_options.addOption(bool, "delayed_init", delayed_init);
+    build_options.addOption(bool, "manual_lifetime", manual_lifetime);
 
     const tracy_client_cpp_module = b.createModule(.{
         .root_source_file = b.path("public/tracy.zig"),
@@ -18,9 +22,10 @@ pub fn build(b: *std.Build) void {
         .file = b.path("public/TracyClient.cpp"),
         .flags = &.{"-fno-sanitize=undefined"},
     });
-    if (enable) {
-        tracy_client_cpp_module.addCMacro("TRACY_ENABLE", "ON");
-    }
+    if (enable) tracy_client_cpp_module.addCMacro("TRACY_ENABLE", "ON");
+    if (delayed_init) tracy_client_cpp_module.addCMacro("TRACY_DELAYED_INIT", "1");
+    if (manual_lifetime) tracy_client_cpp_module.addCMacro("TRACY_MANUAL_LIFETIME", "1");
+
     switch (target.result.os.tag) {
         .windows => {
             tracy_client_cpp_module.addCMacro("WINVER", "0x0601");
@@ -32,6 +37,7 @@ pub fn build(b: *std.Build) void {
             }
         },
         else => {
+            tracy_client_cpp_module.link_libcpp = true;
             tracy_client_cpp_module.linkSystemLibrary("pthread", .{});
         },
     }

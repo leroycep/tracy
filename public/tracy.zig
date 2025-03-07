@@ -1,6 +1,10 @@
 const std = @import("std");
 const build_options = @import("build_options");
 
+pub const enabled = build_options.enable;
+pub const delayed_init = build_options.enable and build_options.delayed_init;
+pub const manual_lifetime = build_options.enable and build_options.manual_lifetime;
+
 pub inline fn frame(name: ?[*:0]const u8) Frame {
     if (build_options.enable) Frame.___tracy_emit_frame_mark_start(name);
     return Frame{
@@ -58,3 +62,7 @@ const ZoneContext = extern struct {
         }
     }
 };
+
+pub extern fn ___tracy_startup_profiler() void;
+pub extern fn ___tracy_shutdown_profiler() void;
+pub extern fn ___tracy_profiler_started() c_int;
