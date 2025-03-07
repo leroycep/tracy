@@ -8,6 +8,36 @@ pub fn build(b: *std.Build) void {
     const build_options = b.addOptions();
     build_options.addOption(bool, "enable", enable);
 
+    const tracy_client_cpp_module = b.createModule(.{
+        .root_source_file = b.path("public/tracy.zig"),
+        .target = target,
+        .optimize = optimize,
+        .link_libcpp = true,
+    });
+    tracy_client_cpp_module.addCSourceFile(.{
+        .file = b.path("public/TracyClient.cpp"),
+        .flags = &.{ "-fno-sanitize=undefined", "-std=c++11" },
+    });
+    tracy_client_cpp_module.addCMacro("TRACY_ENABLE", "ON");
+    switch (target.result.os.tag) {
+        .windows => {
+            tracy_client_cpp_module.linkSystemLibrary("ws2_32", .{});
+            tracy_client_cpp_module.linkSystemLibrary("dbghelp", .{});
+        },
+        else => {
+            tracy_client_cpp_module.linkSystemLibrary("pthread", .{});
+        },
+    }
+    tracy_client_cpp_module.addIncludePath(b.path("public"));
+
+    const tracy_client = b.addLibrary(.{
+        .name = "TracyClient",
+        .linkage = .static,
+        .root_module = tracy_client_cpp_module,
+    });
+
+    b.installArtifact(tracy_client);
+
     const module = b.addModule("tracy", .{
         .root_source_file = b.path("public/tracy.zig"),
         .target = target,
@@ -18,33 +48,10 @@ pub fn build(b: *std.Build) void {
                 .module = build_options.createModule(),
             },
         },
-        .link_libcpp = true,
-    });
-    module.addCSourceFile(.{
-        .file = b.path("public/TracyClient.cpp"),
-        .flags = &.{"-fno-sanitize=undefined"},
     });
     if (enable) {
-        module.addCMacro("TRACY_ENABLE", "ON");
+        module.linkLibrary(tracy_client);
     }
-    switch (target.result.os.tag) {
-        .windows => {
-            module.linkSystemLibrary("ws2_32", .{});
-            module.linkSystemLibrary("dbghelp", .{});
-        },
-        else => {
-            module.linkSystemLibrary("pthread", .{});
-        },
-    }
-    module.addIncludePath(b.path("public"));
-
-    const lib = b.addLibrary(.{
-        .name = "TracyClient",
-        .linkage = .static,
-        .root_module = module,
-    });
-
-    b.installArtifact(lib);
 
     const exe = b.addExecutable(.{
         .name = "example-tracy-profiling",
@@ -53,6 +60,5 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
     exe.root_module.addImport("tracy", module);
-    exe.linkLibrary(lib);
     b.installArtifact(exe);
 }
