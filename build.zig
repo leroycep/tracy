@@ -12,15 +12,18 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("public/tracy.zig"),
         .target = target,
         .optimize = optimize,
+        .link_libc = true,
         .link_libcpp = true,
     });
     tracy_client_cpp_module.addCSourceFile(.{
         .file = b.path("public/TracyClient.cpp"),
         .flags = &.{ "-fno-sanitize=undefined", "-std=c++11" },
     });
-    tracy_client_cpp_module.addCMacro("TRACY_ENABLE", "ON");
+    if (enable) {
+        tracy_client_cpp_module.addCMacro("TRACY_ENABLE", "ON");
+    }
     switch (target.result.os.tag) {
-        .windows => {
+        .windows => if (target.result.abi.isGnu()) {
             tracy_client_cpp_module.linkSystemLibrary("ws2_32", .{});
             tracy_client_cpp_module.linkSystemLibrary("dbghelp", .{});
         },
