@@ -91,7 +91,7 @@ pub const LockContext = struct {
     /// Returns whether the profiler connection is active, and if `afterLock` needs to be called.
     pub inline fn beforeLock(this: @This()) bool {
         if (build_options.enable) {
-            return ___tracy_before_lock_lockable_ctx(this.ctx);
+            return ___tracy_before_lock_lockable_ctx(this.ctx) == 1;
         } else {
             return false;
         }
