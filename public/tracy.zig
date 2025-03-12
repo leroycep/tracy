@@ -211,7 +211,7 @@ pub extern fn ___tracy_emit_memory_free_callstack_named(ptr: [*]const anyopaque,
 
 pub inline fn message(text: []const u8) void {
     if (build_options.enable) {
-        ___tracy_emit_message(text.ptr, text.size, callstack);
+        ___tracy_emit_message(text.ptr, text.len, callstack);
     }
 }
 
@@ -223,7 +223,7 @@ pub inline fn messageL(comptime text: [:0]const u8) void {
 
 pub inline fn messageC(text: []const u8, color: u32) void {
     if (build_options.enable) {
-        ___tracy_emit_messageC(text.ptr, text.size, color, callstack);
+        ___tracy_emit_messageC(text.ptr, text.len, color, callstack);
     }
 }
 
