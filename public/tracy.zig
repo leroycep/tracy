@@ -143,13 +143,20 @@ pub extern fn ___tracy_profiler_started() c_int;
 pub const Allocator = struct {
     backing_allocator: std.mem.Allocator,
 
-    pub fn allocator(this: *@This()) std.mem.Allocator {
+    pub fn init(backing_allocator: std.mem.Allocator) @This() {
+        return .{
+            .backing_allocator = backing_allocator,
+        };
+    }
+
+    pub fn allocator(this: *const @This()) std.mem.Allocator {
         if (enabled) {
             return .{
-                .ptr = this,
+                .ptr = @constCast(this),
                 .vtable = &std.mem.Allocator.VTable{
                     .alloc = alloc,
                     .resize = resize,
+                    .remap = remap,
                     .free = free,
                 },
             };
@@ -197,15 +204,15 @@ pub const Allocator = struct {
     }
 };
 
-pub extern fn ___tracy_emit_memory_alloc(ptr: [*]const anyopaque, size: usize, secure: c_int) void;
-pub extern fn ___tracy_emit_memory_alloc_callstack(ptr: [*]const anyopaque, size: usize, depth: c_int, secure: c_int) void;
-pub extern fn ___tracy_emit_memory_free(ptr: [*]const anyopaque, secure: c_int) void;
-pub extern fn ___tracy_emit_memory_free_callstack(ptr: [*]const anyopaque, depth: c_int, secure: c_int) void;
+pub extern fn ___tracy_emit_memory_alloc(ptr: [*]const u8, size: usize, secure: c_int) void;
+pub extern fn ___tracy_emit_memory_alloc_callstack(ptr: [*]const u8, size: usize, depth: c_int, secure: c_int) void;
+pub extern fn ___tracy_emit_memory_free(ptr: [*]const u8, secure: c_int) void;
+pub extern fn ___tracy_emit_memory_free_callstack(ptr: [*]const u8, depth: c_int, secure: c_int) void;
 
-pub extern fn ___tracy_emit_memory_alloc_named(ptr: [*]const anyopaque, size: usize, secure: c_int, name: [*:0]const u8) void;
-pub extern fn ___tracy_emit_memory_alloc_callstack_named(ptr: [*]const anyopaque, size: usize, depth: c_int, secure: c_int, name: [*:0]const u8) void;
-pub extern fn ___tracy_emit_memory_free_named(ptr: [*]const anyopaque, secure: c_int, name: [*:0]const u8) void;
-pub extern fn ___tracy_emit_memory_free_callstack_named(ptr: [*]const anyopaque, depth: c_int, secure: c_int, name: [*:0]const u8) void;
+pub extern fn ___tracy_emit_memory_alloc_named(ptr: [*]const u8, size: usize, secure: c_int, name: [*:0]const u8) void;
+pub extern fn ___tracy_emit_memory_alloc_callstack_named(ptr: [*]const u8, size: usize, depth: c_int, secure: c_int, name: [*:0]const u8) void;
+pub extern fn ___tracy_emit_memory_free_named(ptr: [*]const u8, secure: c_int, name: [*:0]const u8) void;
+pub extern fn ___tracy_emit_memory_free_callstack_named(ptr: [*]const u8, depth: c_int, secure: c_int, name: [*:0]const u8) void;
 
 // TracyCMessage functions
 
