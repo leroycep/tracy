@@ -4,6 +4,7 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
     const enable = b.option(bool, "enable", "enable tracy profiling") orelse false;
+    const callstack = b.option(i32, "callstack", "Callstack depth") orelse 0;
     const no_callstack = b.option(bool, "no_callstack", "Disable all callstack related functionality") orelse false;
     const delayed_init = b.option(bool, "delayed_init", "Enable delayed initialization of the library (init on first call)") orelse false;
     const manual_lifetime = b.option(bool, "manual_lifetime", "Enable the manual lifetime management of the profile (requires delayed_init)") orelse false;
@@ -11,6 +12,7 @@ pub fn build(b: *std.Build) void {
     const build_options = b.addOptions();
     build_options.addOption(bool, "enable", enable);
     build_options.addOption(bool, "no_callstack", no_callstack);
+    build_options.addOption(i32, "callstack", callstack);
     build_options.addOption(bool, "delayed_init", delayed_init);
     build_options.addOption(bool, "manual_lifetime", manual_lifetime);
 
