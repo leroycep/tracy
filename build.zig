@@ -71,12 +71,17 @@ pub fn build(b: *std.Build) void {
         module.linkLibrary(tracy_client);
     }
 
-    const exe = b.addExecutable(.{
-        .name = "example-tracy-profiling",
+    const example_module = b.createModule(.{
         .root_source_file = b.path("main.zig"),
         .target = target,
         .optimize = optimize,
+        .imports = &.{
+            .{ .name = "tracy", .module = module },
+        },
     });
-    exe.root_module.addImport("tracy", module);
-    b.installArtifact(exe);
+    const example_exe = b.addExecutable(.{
+        .name = "example-tracy-profiling",
+        .root_module = example_module,
+    });
+    b.installArtifact(example_exe);
 }

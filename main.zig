@@ -17,6 +17,6 @@ pub fn main() anyerror!void {
 
     const w = std.crypto.random.int(u64);
 
-    std.time.sleep(1000_000_000 * (w % 5));
+    std.posix.nanosleep(w % 5, 0);
     try main();
 }
